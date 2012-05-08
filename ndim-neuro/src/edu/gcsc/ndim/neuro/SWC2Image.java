@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import javax.vecmath.Point3f;
@@ -42,12 +43,12 @@ public class SWC2Image {
      * Renders the specified SWC file.
      *
      * @param f file to render
-     * @param includeNeighbours defines whether to include neigbour voxel
+     * @param processor processor that can manipulate data entity-wise
      * @return data container that contains the rendered file
      * @throws IOException if an error occured while reading the specified file
      */
     public static DataContainer renderSWCFile(
-            final File f, boolean includeNeighbours) throws IOException {
+            final File f, EntityProcessor processor, SizeContraint sc) throws IOException {
 
         StringBuilder builder = new StringBuilder();
         BufferedReader reader = null;
@@ -118,37 +119,40 @@ public class SWC2Image {
             min[1] = Math.min(min[1], y);
             min[2] = Math.min(min[2], z);
         }
-
-        //
-        int containerSizeX = Math.abs(max[0] - min[0]) + 1;
-        int containerSizeY = Math.abs(max[1] - min[1]) + 1;
-        int containerSizeZ = Math.abs(max[2] - min[2]) + 1;
+        
+        int[] sizes = new int[3];
+        
+        // set image size depending on file size
+        for(int i = 0; i < sizes.length; i++) {
+            sizes[i] = Math.abs(max[i] - min[i]) + 1;
+        }
+        
+        sc.computeSize(sizes);
 
         int offsetX = -min[0];
         int offsetY = -min[1];
         int offsetZ = -min[2];
 
         System.out.println(">> container-size: "
-                + containerSizeX + ", " + containerSizeY + ", " + containerSizeZ);
+                + sizes[0] + ", " + sizes[1] + ", " + sizes[2]);
 
         final DataContainer cnt =
-                new DataContainer(containerSizeX, containerSizeY, containerSizeZ);
+                new DataContainer(sizes[0], sizes[1], sizes[2]);
 
-        cnt.createLayer(float.class,
+        cnt.createLayer(byte.class,
                 new MemTopo(cnt.gridTopo().nrEntities(), 1, false));
 
         final GridTopo gridTopo = cnt.gridTopo();
         final MemTopo memTopo = cnt.layer(0).v1;
-        final FloatBuffer buffer = (FloatBuffer) cnt.layer(0).v2;
+        final ByteBuffer buffer = (ByteBuffer) cnt.layer(0).v2;
 
         if (!buffer.hasArray()) {
             throw new IllegalArgumentException(
                     "FloatBuffer of layer 0 does not contain an array!");
         }
 
-        final float[] data = buffer.array();
+        final byte[] data = buffer.array();
         final int[] pos = new int[gridTopo.nrDims()];
-        final int[] nPos = new int[gridTopo.nrDims()];
 
         System.out.println(">> writing values to data-container");
 
@@ -161,41 +165,13 @@ public class SWC2Image {
             int idx = gridTopo.addr(pos)
                     * memTopo.tupleIncr() + memTopo.elementIncr(0);
 
-            data[idx] = 255.f;
+            data[idx] = (byte) 255;
 
-            // include neigbour voxel
-            if (includeNeighbours) {
-                Stencil st = new Stencil(3, 3, 3);
-                int[] index = new int[]{0, 0, 0};
-
-                while (st.hasNext(index)) {
-
-                    st.next(index);
-
-                    int xN = pos[0] + (index[0] - 1);
-                    int yN = pos[1] + (index[1] - 1);
-                    int zN = pos[2] + (index[2] - 1);
-
-
-                    boolean xInRange = xN > 0 && xN < containerSizeX - 1;
-                    boolean yInRange = yN > 0 && yN < containerSizeY - 1;
-                    boolean zInRange = zN > 0 && zN < containerSizeZ - 1;
-
-                    boolean inRange = xInRange && yInRange && zInRange;
-
-                    if (inRange) {
-
-                        nPos[0] = xN;
-                        nPos[1] = yN;
-                        nPos[2] = zN;
-
-                        int nIdx = gridTopo.addr(nPos)
-                                * memTopo.tupleIncr() + memTopo.elementIncr(0);
-
-                        data[nIdx] = 255.f;
-                    }
-                }
+            if (processor != null) {
+                // process
+                processor.process(cnt, pos);
             }
+
         }
 
         return cnt;

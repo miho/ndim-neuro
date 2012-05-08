@@ -34,10 +34,10 @@ import java.io.IOException;
 import org.ndim.DataContainer;
 
 /**
- *
+ * This is just a test class.
  * @author Michael Hoffer <info@michaelhoffer.de>
  */
-public class NdimNeuro {
+public class NdimNeuroTest {
 
     /**
      * @param args the command line arguments
@@ -45,12 +45,16 @@ public class NdimNeuro {
     public static void main(String[] args) throws IOException {
         // TODO code application logic here
         
+        AbstractSizeConstraint po2c = new PowerOfTwoConstraint(0,1);
         
+        AbstractSizeConstraint minC = new MinSizeConstraint(1024,1024);
+        
+        minC.setInput(po2c);
         
         DataContainer cnt = 
                 SWC2Image.renderSWCFile(
                 new File("/Users/miho/Downloads/NeuroMorpho-test-neuron.txt"),
-                false);
+                null, minC);
         
         System.out.println(">> writing container to image file");
         
@@ -60,13 +64,11 @@ public class NdimNeuro {
         DataContainer cnt2 = 
                 SWC2Image.renderSWCFile(
                 new File("/Users/miho/Downloads/NeuroMorpho-test-neuron.txt"),
-                true);
+                new AddNeigboursProcessor(1), minC);
         
         System.out.println(">> writing container to image file");
         
         SWC2Image.container2Image(
                 cnt2, new File("/Users/miho/Downloads/NeuroMorpho-test-neuron-neighbours.tiff"), "tiff");
-        
-        
     }
 }
