@@ -34,41 +34,44 @@ import java.io.IOException;
 import org.ndim.DataContainer;
 
 /**
- * This is just a test class.
+ * This is just a simple sketch.
  * @author Michael Hoffer <info@michaelhoffer.de>
  */
-public class NdimNeuroTest {
+public class NdimNeuro {
 
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException {
-        // TODO code application logic here
         
+        if (args.length!=2) {
+            System.err.println(
+                    ">> wrong number of arguments!");
+            System.err.println(
+                    ">> Usage: java -jar ndim-neuro.jar input.swc output.tiff");
+            System.exit(1);
+        }
+        
+        // required image size is 2^n for x and y
         AbstractSizeConstraint po2c = new PowerOfTwoConstraint(0,1);
         
-        AbstractSizeConstraint minC = new MinSizeConstraint(1024,1024);
+        // min size for x and y is 512
+        AbstractSizeConstraint minC = new MinSizeConstraint(512,512);
         
-        minC.setInput(po2c);
+        // combine the two constraints
+        po2c.setInput(minC);
         
+        // now we define a voxel processor that includes neighbour voxels
+        AbstractEntityProcessor p = new AddNeigboursProcessor(1);
+        
+        // render swc file to ndim data container
         DataContainer cnt = 
                 SWC2Image.renderSWCFile(
-                new File("/Users/miho/Downloads/NeuroMorpho-test-neuron.txt"),
-                null, minC);
+                new File(args[0]),
+                p, po2c);
         
-        System.out.println(">> writing container to image file");
-        
+        // write data container to tiff file
         SWC2Image.container2Image(
-                cnt, new File("/Users/miho/Downloads/NeuroMorpho-test-neuron.tiff"), "tiff");
-        
-        DataContainer cnt2 = 
-                SWC2Image.renderSWCFile(
-                new File("/Users/miho/Downloads/NeuroMorpho-test-neuron.txt"),
-                new AddNeigboursProcessor(1), minC);
-        
-        System.out.println(">> writing container to image file");
-        
-        SWC2Image.container2Image(
-                cnt2, new File("/Users/miho/Downloads/NeuroMorpho-test-neuron-neighbours.tiff"), "tiff");
+                cnt, new File(args[1]), "tiff");
     }
 }

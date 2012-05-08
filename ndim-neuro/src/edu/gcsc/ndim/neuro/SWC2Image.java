@@ -56,6 +56,7 @@ public class SWC2Image {
      */
     public static void container2Image(
             final DataContainer cnt, final File out, final String codec) throws IOException {
+        System.out.println(">> writing container to image file: " + out);
         final CODEC.Writer wr = CODECRegistry.getCODEC(codec).
                 getWriter(out);
         wr.write(cnt);

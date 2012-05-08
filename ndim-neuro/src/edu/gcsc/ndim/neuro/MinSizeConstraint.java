@@ -49,10 +49,8 @@ public class MinSizeConstraint extends AbstractSizeConstraint {
         super.computeSize(size);
 
         // compute max included size
-        int max = 0;
         for (int i = 0; i < min.length; i++) {
-            
-            size[i] = Math.min(min[i],size[i]);
+
             size[i] = Math.max(min[i],size[i]);
         }
     }
