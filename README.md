@@ -10,5 +10,7 @@ Allows to convert [SWC Files](http://research.mssm.edu/cnic/swc.html) to TIFF im
 ## Compile (via NetBeans):
 
 - get [ndim](https://github.com/aheusel/ndim) and open it in NetBeans
-- open the ndim-neuro project in NetBeans.
+- open the ndim-neuro project in NetBeans
+- if NetBeans complaints about missing dependencies point it to the ndim project
+  by using the `Resolve Reference Problems` dialog
 - Compile the project in NetBeans
