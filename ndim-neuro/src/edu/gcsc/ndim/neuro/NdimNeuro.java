@@ -29,6 +29,10 @@
 
 package edu.gcsc.ndim.neuro;
 
+import java.io.File;
+import java.io.IOException;
+import org.ndim.DataContainer;
+
 /**
  *
  * @author Michael Hoffer <info@michaelhoffer.de>
@@ -38,7 +42,31 @@ public class NdimNeuro {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         // TODO code application logic here
+        
+        
+        
+        DataContainer cnt = 
+                SWC2Image.renderSWCFile(
+                new File("/Users/miho/Downloads/NeuroMorpho-test-neuron.txt"),
+                false);
+        
+        System.out.println(">> writing container to image file");
+        
+        SWC2Image.container2Image(
+                cnt, new File("/Users/miho/Downloads/NeuroMorpho-test-neuron.tiff"), "tiff");
+        
+        DataContainer cnt2 = 
+                SWC2Image.renderSWCFile(
+                new File("/Users/miho/Downloads/NeuroMorpho-test-neuron.txt"),
+                true);
+        
+        System.out.println(">> writing container to image file");
+        
+        SWC2Image.container2Image(
+                cnt2, new File("/Users/miho/Downloads/NeuroMorpho-test-neuron-neighbours.tiff"), "tiff");
+        
+        
     }
 }
