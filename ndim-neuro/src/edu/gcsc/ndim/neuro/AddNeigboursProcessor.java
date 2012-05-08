@@ -42,7 +42,7 @@ import org.ndim.Stencil;
  */
 public class AddNeigboursProcessor extends AbstractEntityProcessor {
 
-    private int nrNeigbours;
+    private int cubeSize;
 
     /**
      * Constructor.
@@ -50,7 +50,7 @@ public class AddNeigboursProcessor extends AbstractEntityProcessor {
      * @param cubeSize  size of the cube
      */
     public AddNeigboursProcessor(int cubeSize) {
-        this.nrNeigbours = cubeSize;
+        this.cubeSize = cubeSize;
     }
 
     @Override
@@ -67,7 +67,7 @@ public class AddNeigboursProcessor extends AbstractEntityProcessor {
         int dim = gridTopo.nrDims();
         int[] size = gridTopo.extent();
 
-        int stencilSize = nrNeigbours * 2 + 1;
+        int stencilSize = cubeSize * 2 + 1;
 
         // include neigbour voxel
         Stencil st = new Stencil(stencilSize, stencilSize, stencilSize);
@@ -82,7 +82,7 @@ public class AddNeigboursProcessor extends AbstractEntityProcessor {
             boolean inRange = false;
 
             for (int i = 0; i < dim; i++) {
-                values[i] = pos[i] + (index[i] - nrNeigbours);
+                values[i] = pos[i] + (index[i] - cubeSize);
 
                 inRange = values[i] > 0 && values[i] < size[i] - 1;
 
