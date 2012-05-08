@@ -1,17 +1,4 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package edu.gcsc.ndim.neuro;
-
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-import org.ndim.DataContainer;
-import org.ndim.GridTopo;
-import org.ndim.MemTopo;
-import org.ndim.Stencil;
-
-/*
  * Copyright 2012 Goethe Center for Scientific Computing (G-CSC) All rights reserved.
  * 
  *
@@ -39,6 +26,20 @@ import org.ndim.Stencil;
  * authors and should not be interpreted as representing official policies, either expressed
  * or implied, of Goethe Center for Scientific Computing (G-CSC).
  */
+package edu.gcsc.ndim.neuro;
+
+import java.nio.ByteBuffer;
+import org.ndim.DataContainer;
+import org.ndim.GridTopo;
+import org.ndim.MemTopo;
+import org.ndim.Stencil;
+
+
+/**
+ * Adds neigbours to the image (paints them white), i.e., paints a cube around
+ * each voxel.
+ * @author Michael Hoffer <info@michaelhoffer.de>
+ */
 public class AddNeigboursProcessor extends AbstractEntityProcessor {
 
     private int nrNeigbours;
@@ -46,10 +47,10 @@ public class AddNeigboursProcessor extends AbstractEntityProcessor {
     /**
      * Constructor.
      *
-     * @param neigbourDist number of neigbours to add
+     * @param cubeSize  size of the cube
      */
-    public AddNeigboursProcessor(int nrNeigbours) {
-        this.nrNeigbours = nrNeigbours;
+    public AddNeigboursProcessor(int cubeSize) {
+        this.nrNeigbours = cubeSize;
     }
 
     @Override
@@ -104,12 +105,12 @@ public class AddNeigboursProcessor extends AbstractEntityProcessor {
         if (cnt.nrLayers() < 1) {
             throw new IllegalArgumentException(
                     "Specified data container is invalid:"
-                    + " contains no layer with element size 3!");
+                    + " contains no layer!");
         }
 
         if (!(cnt.layer(0).v2 instanceof ByteBuffer)) {
             throw new IllegalArgumentException(
-                    "only FloatBuffer layers are supported!");
+                    "only ByteBuffer layers are supported!");
         }
 
         final ByteBuffer buffer = (ByteBuffer) cnt.layer(0).v2;
