@@ -44,11 +44,11 @@ public class NdimNeuro {
      */
     public static void main(String[] args) throws IOException {
         
-        if (args.length!=2) {
+        if (args.length!=3) {
             System.err.println(
                     ">> wrong number of arguments!");
             System.err.println(
-                    ">> Usage: java -jar ndim-neuro.jar input.swc output.tiff");
+                    ">> Usage: java -jar neighbours ndim-neuro.jar input.swc output.tiff");
             System.exit(1);
         }
         
@@ -62,16 +62,16 @@ public class NdimNeuro {
         po2c.setInput(minC);
         
         // now we define a voxel processor that includes neighbour voxels
-        AbstractEntityProcessor p = new AddNeigboursProcessor(1);
+        AbstractEntityProcessor p = new AddNeigboursProcessor(Integer.parseInt(args[0]));
         
         // render swc file to ndim data container
         DataContainer cnt = 
                 SWC2Image.renderSWCFile(
-                new File(args[0]),
+                new File(args[1]),
                 p, po2c);
         
         // write data container to tiff file
         SWC2Image.container2Image(
-                cnt, new File(args[1]), "tiff");
+                cnt, new File(args[2]), "tiff");
     }
 }

@@ -150,7 +150,9 @@ public class SWC2Image {
             sizes[i] = Math.abs(max[i] - min[i]) + 1;
         }
         
-        sc.computeSize(sizes);
+        if (sc!=null) {
+            sc.computeSize(sizes);
+        }
 
         int offsetX = -min[0];
         int offsetY = -min[1];
