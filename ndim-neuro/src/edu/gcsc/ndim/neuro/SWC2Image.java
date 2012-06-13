@@ -34,7 +34,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import javax.vecmath.Point3i;
+import org.ndim.improc.Point3i;
 import org.ndim.*;
 
 /**
@@ -163,6 +163,8 @@ public class SWC2Image {
 
         final DataContainer cnt =
                 new DataContainer(sizes[0], sizes[1], sizes[2]);
+        
+        System.out.println("#" + cnt.gridTopo().nrEntities());
 
         cnt.createLayer(byte.class,
                 new MemTopo(cnt.gridTopo().nrEntities(), 1, false));

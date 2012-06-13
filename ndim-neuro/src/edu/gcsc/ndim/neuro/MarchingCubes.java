@@ -37,54 +37,47 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
-import javax.vecmath.Point3f;
-import javax.vecmath.Vector3f;
 import org.ndim.AddrOp;
 import org.ndim.GridTopo;
 import org.ndim.MemTopo;
 import org.ndim.Stencil;
 import org.ndim.math.Vec;
 import org.ndim.Arrays.Algo;
+import org.ndim.improc.Point3f;
+import org.ndim.improc.Vector3f;
 
 /**
  *
  * @author Alexander Heusel
  */
-public class MarchingCubes
-{
+public class MarchingCubes {
 
-    protected static final class Node3f extends Point3f
-    {
+    protected static final class Node3f extends Point3f {
 
         public int id;
 
-        public Node3f()
-        {
+        public Node3f() {
             super();
         }
 
-        public Node3f(float x, float y, float z)
-        {
+        public Node3f(float x, float y, float z) {
             super(x, y, z);
         }
     }
 
-    protected static final class Triangle
-    {
+    protected static final class Triangle {
 
         public int n0;
         public int n1;
         public int n2;
 
-        public Triangle(int id0, int id1, int id2)
-        {
+        public Triangle(int id0, int id1, int id2) {
             n0 = id0;
             n1 = id1;
             n2 = id2;
         }
 
-        public final void copyTo(int startIdx, int[] array)
-        {
+        public final void copyTo(int startIdx, int[] array) {
             array[startIdx] = n0;
             array[startIdx + 1] = n1;
             array[startIdx + 2] = n2;
@@ -109,95 +102,78 @@ public class MarchingCubes
     // The number of sub samples to take
     private int samples;
 
-
-    public MarchingCubes()
-    {
+    public MarchingCubes() {
         setGridSpacing(1.0f, 1.0f, 1.0f);
-        setOffset(0f, 0f, 0f);       
+        setOffset(0f, 0f, 0f);
     }
 
-    public MarchingCubes(float threshold, float h0, float h1, float h2)
-    {
+    public MarchingCubes(float threshold, float h0, float h1, float h2) {
         setThreshold(threshold);
         setGridSpacing(h0, h1, h2);
         setOffset(0f, 0f, 0f);
     }
 
-    public MarchingCubes(float threshold, float h0, float h1, float h2, boolean debug)
-    {
+    public MarchingCubes(float threshold, float h0, float h1, float h2, boolean debug) {
         setThreshold(threshold);
         setGridSpacing(h0, h1, h2);
         setDebug(debug);
     }
 
-    public final boolean getDebug()
-    {
+    public final boolean getDebug() {
         return debug;
     }
 
-    public final void setDebug(boolean debug)
-    {
+    public final void setDebug(boolean debug) {
         this.debug = debug;
     }
 
-    public final float getThreshold()
-    {
+    public final float getThreshold() {
         return threshold;
     }
 
-    public final void setThreshold(float threshold)
-    {
+    public final void setThreshold(float threshold) {
         this.threshold = threshold;
     }
 
-    public final float[] getGridSpacing()
-    {
+    public final float[] getGridSpacing() {
         return h.clone();
     }
 
-    public final void setGridSpacing(float h0, float h1, float h2)
-    {
+    public final void setGridSpacing(float h0, float h1, float h2) {
         h[0] = h0;
         h[1] = h1;
         h[2] = h2;
     }
 
-    public final void setGridSpacing(float[] h)
-    {
+    public final void setGridSpacing(float[] h) {
         System.arraycopy(h, 0, this.h, 0, this.h.length);
     }
 
-    public final void setOffset(float d0, float d1, float d2)
-    {
+    public final void setOffset(float d0, float d1, float d2) {
         offs[0] = d0;
         offs[1] = d1;
         offs[2] = d2;
     }
-    
-    public final void setOffset(float[] offs)
-    {
+
+    public final void setOffset(float[] offs) {
         System.arraycopy(offs, 0, this.offs, 0, this.offs.length);
     }
 
-    public final void setSubsampling(int samples)
-    {
+    public final void setSubsampling(int samples) {
         this.samples = samples;
     }
 
-    public final int getSubsampling()
-    {
+    public final int getSubsampling() {
         return samples;
     }
 
     // Returns false if a valid surface has been generated.
-    public final boolean isEmpty()
-    {
+    public final boolean isEmpty() {
         return isEmpty;
     }
 
     // Deletes the isosurface.
-    public final void clear()
-    {
+    public final void clear() {
         vertices = null;
         triangles = null;
         normals = null;
@@ -206,15 +182,13 @@ public class MarchingCubes
 
     // Generates the isosurface from the scalar field contained in the
     // buffer ptScalarField[].
-    public void exec(final GridTopo gridTopo, final MemTopo memTopo, final byte[] data)
-    {
+    public void exec(final GridTopo gridTopo, final MemTopo memTopo, final byte[] data) {
         // List of POINT3Ds which form the isosurface.
         HashMap<Integer, MarchingCubes.Node3f> vertexMap = new HashMap<Integer, MarchingCubes.Node3f>();
         // List of TRIANGLES which form the triangulation of the isosurface.
         ArrayList<MarchingCubes.Triangle> triangleList = new ArrayList<MarchingCubes.Triangle>();
 
-        if(!isEmpty)
-        {
+        if (!isEmpty) {
             clear();
         }
 
@@ -222,7 +196,7 @@ public class MarchingCubes
         final GridTopo cropTopo = gridTopo.trimEnd(1);
         final Stencil stencil = new Stencil(cropTopo.extent());
         final AddrOp op = new AddrOp(cropTopo, memTopo);
-        
+
 
         float[] elem = new float[8];
         int[] edgeID = new int[12];
@@ -234,9 +208,8 @@ public class MarchingCubes
         int addr;
         final float[] posf = Algo.fill(new float[cropTopo.nrDims()], 0.0f);
         final int[] pos = Algo.fill(new int[cropTopo.nrDims()], 0);
-        while(stencil.hasNext(pos))
-        {
-            addr =  op.addr(pos, 0);
+        while (stencil.hasNext(pos)) {
+            addr = op.addr(pos, 0);
 
             elem[0] = data[addr];
             elem[1] = data[addr + incrY];
@@ -247,12 +220,13 @@ public class MarchingCubes
             elem[6] = data[addr + incrX + incrY + incrZ];
             elem[7] = data[addr + incrX + incrZ];
 
-            for(int i = 0; i < edgeID.length; i++)
-            {
+            for (int i = 0; i < edgeID.length; i++) {
                 edgeID[i] = getEdgeID(addr, incrX, incrY, incrZ, i);
             }
 
-            posf[GridTopo.X] = pos[GridTopo.X]; posf[GridTopo.Y] = pos[GridTopo.Y]; posf[GridTopo.Z] = pos[GridTopo.Z];
+            posf[GridTopo.X] = pos[GridTopo.X];
+            posf[GridTopo.Y] = pos[GridTopo.Y];
+            posf[GridTopo.Z] = pos[GridTopo.Z];
             Vec.elementwiseMul(posf, h);
             triangulateCell(posf, stencil.atEnd(pos), elem, edgeID, vertexMap, triangleList);
 
@@ -264,83 +238,67 @@ public class MarchingCubes
 
     }
 
-
     private void triangulateCell(float[] pos, int atEnd, float[] elem, int[] edgeID,
-            HashMap<Integer, MarchingCubes.Node3f> vertexMap, ArrayList<MarchingCubes.Triangle> triangleList)
-    {
+            HashMap<Integer, MarchingCubes.Node3f> vertexMap, ArrayList<MarchingCubes.Triangle> triangleList) {
         int tableIndex = getTableIndex(elem, threshold);
-        if(edgeLUT[tableIndex] != 0)
-        {
-            if((edgeLUT[tableIndex] & 8) > 0)
-            {
+        if (edgeLUT[tableIndex] != 0) {
+            if ((edgeLUT[tableIndex] & 8) > 0) {
                 vertexMap.put(edgeID[3], intersect(pos, elem, 3));
             }
-            if((edgeLUT[tableIndex] & 1) > 0)
-            {
+            if ((edgeLUT[tableIndex] & 1) > 0) {
                 vertexMap.put(edgeID[0], intersect(pos, elem, 0));
             }
-            if((edgeLUT[tableIndex] & 256) > 0)
-            {
+            if ((edgeLUT[tableIndex] & 256) > 0) {
                 vertexMap.put(edgeID[8], intersect(pos, elem, 8));
             }
 
-            if((atEnd & 0x1) > 0) // X
+            if ((atEnd & 0x1) > 0) // X
             {
-                if((edgeLUT[tableIndex] & 4) > 0)
-                {
+                if ((edgeLUT[tableIndex] & 4) > 0) {
                     vertexMap.put(edgeID[2], intersect(pos, elem, 2));
                 }
-                if((edgeLUT[tableIndex] & 2048) > 0)
-                {
+                if ((edgeLUT[tableIndex] & 2048) > 0) {
                     vertexMap.put(edgeID[11], intersect(pos, elem, 11));
                 }
             }
-            if((atEnd & 0x2) > 0) // Y
+            if ((atEnd & 0x2) > 0) // Y
             {
-                if((edgeLUT[tableIndex] & 2) > 0)
-                {
+                if ((edgeLUT[tableIndex] & 2) > 0) {
                     vertexMap.put(edgeID[1], intersect(pos, elem, 1));
                 }
-                if((edgeLUT[tableIndex] & 512) > 0)
-                {
+                if ((edgeLUT[tableIndex] & 512) > 0) {
                     vertexMap.put(edgeID[9], intersect(pos, elem, 9));
                 }
             }
-            if((atEnd & 0x4) > 0) // Z
+            if ((atEnd & 0x4) > 0) // Z
             {
-                if((edgeLUT[tableIndex] & 16) > 0)
-                {
+                if ((edgeLUT[tableIndex] & 16) > 0) {
                     vertexMap.put(edgeID[4], intersect(pos, elem, 4));
                 }
-                if((edgeLUT[tableIndex] & 128) > 0)
-                {
+                if ((edgeLUT[tableIndex] & 128) > 0) {
                     vertexMap.put(edgeID[7], intersect(pos, elem, 7));
                 }
             }
-            if((atEnd & 0x3) > 0) // XY
+            if ((atEnd & 0x3) > 0) // XY
             {
-                if((edgeLUT[tableIndex] & 1024) > 0)
-                {
+                if ((edgeLUT[tableIndex] & 1024) > 0) {
                     vertexMap.put(edgeID[10], intersect(pos, elem, 10));
                 }
             }
-            if((atEnd & 0x5) > 0) // XZ
+            if ((atEnd & 0x5) > 0) // XZ
             {
-                if((edgeLUT[tableIndex] & 64) > 0)
-                {
+                if ((edgeLUT[tableIndex] & 64) > 0) {
                     vertexMap.put(edgeID[6], intersect(pos, elem, 6));
                 }
             }
-            if((atEnd & 0x6) > 0) // YZ
+            if ((atEnd & 0x6) > 0) // YZ
             {
-                if((edgeLUT[tableIndex] & 32) > 0)
-                {
+                if ((edgeLUT[tableIndex] & 32) > 0) {
                     vertexMap.put(edgeID[5], intersect(pos, elem, 5));
                 }
             }
 
-            for(int i = 0; triangleLUT[tableIndex][i] != -1; i += 3)
-            {
+            for (int i = 0; triangleLUT[tableIndex][i] != -1; i += 3) {
                 triangleList.add(
                         new MarchingCubes.Triangle(
                         edgeID[triangleLUT[tableIndex][i]],
@@ -350,43 +308,43 @@ public class MarchingCubes
         }
     }
 
-    public void writeSurfaceObj(String fileName) throws IOException
-    {
+    public void writeSurfaceObj(String fileName) throws IOException {
         FileWriter fw = new FileWriter(fileName);
         Formatter formatter = new Formatter(fw, Locale.US);
 
         // Writer vertices
-        for(int i = 0; i < vertices.length; i++)
-        {
+        for (int i = 0; i < vertices.length; i++) {
             //fw.write(String.format("v %f %f %f\n", vertices[i].x, vertices[i].y, vertices[i].z));
             formatter.format("v %f %f %f\n", vertices[i].x, vertices[i].y, vertices[i].z);
         }
 
         // Write normals
-        for(int i = 0; i < normals.length; i++)
-        {
+        for (int i = 0; i < normals.length; i++) {
             //fw.write(String.format("vn %f %f %f\n", normals[i].x, normals[i].y, normals[i].z));
             formatter.format("vn %f %f %f\n", normals[i].x, normals[i].y, normals[i].z);
         }
 
         // Write triangles
-        for(int i = 0; i < triangles.length; i += 3)
-        {
+        for (int i = 0; i < triangles.length; i += 3) {
 //            fw.write(String.format("f %d//%d %d//%d %d//%d\n",
 //                    triangles[i] + 1, triangles[i] + 1,
 //                    triangles[i + 1] + 1, triangles[i + 1] + 1,
 //                    triangles[i + 2] + 1, triangles[i + 2] + 1));
-            formatter.format("f %d//%d %d//%d %d//%d\n",
-                    triangles[i] + 1, triangles[i] + 1,
-                    triangles[i + 1] + 1, triangles[i + 1] + 1,
-                    triangles[i + 2] + 1, triangles[i + 2] + 1);
+//            formatter.format("f %d//%d %d//%d %d//%d\n",
+//                    triangles[i] + 1, triangles[i] + 1,
+//                    triangles[i + 1] + 1, triangles[i + 1] + 1,
+//                    triangles[i + 2] + 1, triangles[i + 2] + 1);
+
+            formatter.format("f %d %d %d\n",
+                    triangles[i] + 1,
+                    triangles[i + 1] + 1,
+                    triangles[i + 2] + 1);
 
         }
         fw.flush();
     }
 
-    public void writeSurfaceVTK(String fileName, String dataSetName) throws IOException
-    {
+    public void writeSurfaceVTK(String fileName, String dataSetName) throws IOException {
         FileWriter fw = new FileWriter(fileName);
         Formatter formatter = new Formatter(fw, Locale.US);
 
@@ -400,17 +358,15 @@ public class MarchingCubes
         //fw.write(String.format("POINTS %d float\n", vertices.length));
         formatter.format("POINTS %d float\n", vertices.length);
 
-        for(int i = 0; i < vertices.length; i++)
-        {
+        for (int i = 0; i < vertices.length; i++) {
             //fw.write(String.format("%f %f %f\n", vertices[i].x, vertices[i].y, vertices[i].z));
             formatter.format("%f %f %f\n", vertices[i].x, vertices[i].y, vertices[i].z);
         }
 
         // Write triangles
         //fw.write(String.format("POLYGONS %d %d\n", (triangles.length/3), (triangles.length/3)*4));
-        formatter.format("POLYGONS %d %d\n", (triangles.length/3), (triangles.length/3)*4);
-        for(int i = 0; i < triangles.length; i += 3)
-        {
+        formatter.format("POLYGONS %d %d\n", (triangles.length / 3), (triangles.length / 3) * 4);
+        for (int i = 0; i < triangles.length; i += 3) {
             //fw.write(String.format("3 %d %d %d\n", triangles[i], triangles[i + 1], triangles[i + 2]));
             formatter.format("3 %d %d %d\n", triangles[i], triangles[i + 1], triangles[i + 2]);
         }
@@ -418,10 +374,8 @@ public class MarchingCubes
     }
 
     // Returns the edge ID.
-    private static int getEdgeID(int addr, int incrX, int incrY, int incrZ, int nEdgeNo)
-    {
-        switch (nEdgeNo)
-        {
+    private static int getEdgeID(int addr, int incrX, int incrY, int incrZ, int nEdgeNo) {
+        switch (nEdgeNo) {
             case 0:
                 return 3 * addr + 1;
             case 1:
@@ -455,14 +409,12 @@ public class MarchingCubes
 
     // Calculates the intersection point of the isosurface with an
     // edge.
-    protected MarchingCubes.Node3f intersect(float[] pos, float[] elem, int nEdgeNo)
-    {
+    protected MarchingCubes.Node3f intersect(float[] pos, float[] elem, int nEdgeNo) {
         float x1 = pos[GridTopo.X], y1 = pos[GridTopo.Y], z1 = pos[GridTopo.Z];
         float x2 = pos[GridTopo.X], y2 = pos[GridTopo.Y], z2 = pos[GridTopo.Z];
         int idx1 = 0, idx2 = 0;
 
-        switch (nEdgeNo)
-        {
+        switch (nEdgeNo) {
             case 0:
                 y2 += h[GridTopo.Y];
                 idx1 = 0;
@@ -554,16 +506,14 @@ public class MarchingCubes
 
     // Interpolates between two grid points to produce the point at which
     // the isosurface intersects an edge.
-    private static MarchingCubes.Node3f interpolate(float fX1, float fY1, float fZ1, float fX2, float fY2, float fZ2, float tVal1, float tVal2, float tIsoLevel)
-    {
+    private static MarchingCubes.Node3f interpolate(float fX1, float fY1, float fZ1, float fX2, float fY2, float fZ2, float tVal1, float tVal2, float tIsoLevel) {
         float mu = (tIsoLevel - tVal1) / (tVal2 - tVal1);
         return new MarchingCubes.Node3f(fX1 + mu * (fX2 - fX1), fY1 + mu * (fY2 - fY1), fZ1 + mu * (fZ2 - fZ1));
     }
 
     // Renames vertices and triangles so that they can be accessed more
     // efficiently.
-    private void transcribeVerticesAndTriangles(HashMap<Integer, MarchingCubes.Node3f> vertexMap, ArrayList<MarchingCubes.Triangle> triangleList)
-    {
+    private void transcribeVerticesAndTriangles(HashMap<Integer, MarchingCubes.Node3f> vertexMap, ArrayList<MarchingCubes.Triangle> triangleList) {
         int idIter = 0;
 
         Iterator<Entry<Integer, MarchingCubes.Node3f>> mapIterator = vertexMap.entrySet().iterator();
@@ -572,16 +522,14 @@ public class MarchingCubes
         MarchingCubes.Triangle currentTri;
 
         // Rename vertices.
-        while(mapIterator.hasNext())
-        {
+        while (mapIterator.hasNext()) {
             currentEntry = mapIterator.next();
             currentEntry.getValue().id = idIter;
             idIter++;
         }
 
         // Now rename triangles.
-        while(vecIterator.hasNext())
-        {
+        while (vecIterator.hasNext()) {
             currentTri = vecIterator.next();
             currentTri.n0 = vertexMap.get(currentTri.n0).id;
             currentTri.n1 = vertexMap.get(currentTri.n1).id;
@@ -593,18 +541,16 @@ public class MarchingCubes
         // Copy vertices.
         mapIterator = vertexMap.entrySet().iterator();
         vertices = new Point3f[vertexMap.size()];
-        for(int i = 0; i < vertices.length; i++)
-        {
+        for (int i = 0; i < vertices.length; i++) {
             currentEntry = mapIterator.next();
-            vertices[i] = new Point3f(  currentEntry.getValue().x + offs[0],
-                                        currentEntry.getValue().y + offs[1],
-                                        currentEntry.getValue().z + offs[2]);
+            vertices[i] = new Point3f(currentEntry.getValue().x + offs[0],
+                    currentEntry.getValue().y + offs[1],
+                    currentEntry.getValue().z + offs[2]);
         }
         // Copy vertex indices which make triangles.
         vecIterator = triangleList.iterator();
         triangles = new int[triangleList.size() * 3];
-        for(int i = 0; i < triangles.length; i += 3)
-        {
+        for (int i = 0; i < triangles.length; i += 3) {
             currentTri = vecIterator.next();
             currentTri.copyTo(i, triangles);
         }
@@ -622,14 +568,12 @@ public class MarchingCubes
         normals = new Vector3f[vertices.length];
 
         // Set all normals to 0.
-        for(int i = 0; i < normals.length; i++)
-        {
+        for (int i = 0; i < normals.length; i++) {
             normals[i] = new Vector3f(0, 0, 0);
         }
 
         // Calculate normals.
-        for(int i = 0; i < triangles.length; i += 3)
-        {
+        for (int i = 0; i < triangles.length; i += 3) {
             id0 = triangles[i];
             id1 = triangles[i + 1];
             id2 = triangles[i + 2];
@@ -644,53 +588,42 @@ public class MarchingCubes
         }
 
         // Normalize normals.
-        for(int i = 0; i < normals.length; i++)
-        {
+        for (int i = 0; i < normals.length; i++) {
             normals[i].normalize();
         }
 
     }
 
-    private static int getTableIndex(float[] elem, float threshold)
-    {
+    private static int getTableIndex(float[] elem, float threshold) {
         int tableIndex = 0;
-        if(elem[0] < threshold)
-        {
+        if (elem[0] < threshold) {
             tableIndex |= 1;
         }
-        if(elem[1] < threshold)
-        {
+        if (elem[1] < threshold) {
             tableIndex |= 2;
         }
-        if(elem[2] < threshold)
-        {
+        if (elem[2] < threshold) {
             tableIndex |= 4;
         }
-        if(elem[3] < threshold)
-        {
+        if (elem[3] < threshold) {
             tableIndex |= 8;
         }
-        if(elem[4] < threshold)
-        {
+        if (elem[4] < threshold) {
             tableIndex |= 16;
         }
-        if(elem[5] < threshold)
-        {
+        if (elem[5] < threshold) {
             tableIndex |= 32;
         }
-        if(elem[6] < threshold)
-        {
+        if (elem[6] < threshold) {
             tableIndex |= 64;
         }
-        if(elem[7] < threshold)
-        {
+        if (elem[7] < threshold) {
             tableIndex |= 128;
         }
         return tableIndex;
 
     }
-    static final int[] edgeLUT =
-    {
+    static final int[] edgeLUT = {
         0x0, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
         0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
         0x190, 0x99, 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
@@ -724,8 +657,7 @@ public class MarchingCubes
         0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c,
         0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0
     };
-    static final int[][] triangleLUT =
-    {
+    static final int[][] triangleLUT = {
         {
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
         },
