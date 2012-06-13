@@ -31,6 +31,8 @@ package edu.gcsc.ndim.neuro;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import org.ndim.DataContainer;
 
 /**
@@ -53,13 +55,13 @@ public class NdimNeuro {
         }
         
         // required image size is 2^n for x and y
-        AbstractSizeConstraint po2c = new PowerOfTwoConstraint(0,1);
+//        AbstractSizeConstraint po2c = new PowerOfTwoConstraint(0,1);
         
         // min size for x and y is 512
-        AbstractSizeConstraint minC = new MinSizeConstraint(512,512);
+//        AbstractSizeConstraint minC = new MinSizeConstraint(512,512);
         
         // combine the two constraints
-        po2c.setInput(minC);
+//        po2c.setInput(minC);
         
         // now we define a voxel processor that includes neighbour voxels
         AbstractEntityProcessor p = new AddNeigboursProcessor(Integer.parseInt(args[0]));
@@ -68,10 +70,21 @@ public class NdimNeuro {
         DataContainer cnt = 
                 SWC2Image.renderSWCFile(
                 new File(args[1]),
-                p, po2c);
+//                p, po2c);
+                p, null);
         
         // write data container to tiff file
         SWC2Image.container2Image(
                 cnt, new File(args[2]), "tiff");
+        
+        // create grid
+        MarchingCubes mc = new MarchingCubes(0.0f, 1, 1, 1);
+        
+        ByteBuffer buffer = (ByteBuffer) cnt.layer(0).v2;
+        
+        
+        mc.exec(cnt.gridTopo(), cnt.layer(0).v1, buffer.array());
+        
+        mc.writeSurfaceObj("/Users/miho/out.obj");
     }
 }

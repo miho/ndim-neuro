@@ -29,10 +29,7 @@
 package edu.gcsc.ndim.neuro;
 
 import java.nio.ByteBuffer;
-import org.ndim.DataContainer;
-import org.ndim.GridTopo;
-import org.ndim.MemTopo;
-import org.ndim.Stencil;
+import org.ndim.*;
 
 
 /**
@@ -60,9 +57,9 @@ public class AddNeigboursProcessor extends AbstractEntityProcessor {
 
         byte[] data = validateInput(cnt);
 
-
         GridTopo gridTopo = cnt.gridTopo();
         MemTopo memTopo = cnt.layer(0).v1;
+        AddrOp addrOp = new AddrOp(gridTopo, memTopo);
 
         int dim = gridTopo.nrDims();
         int[] size = gridTopo.extent();
@@ -92,9 +89,10 @@ public class AddNeigboursProcessor extends AbstractEntityProcessor {
             }
 
             if (inRange) {
-
-                int nIdx = gridTopo.addr(values)
-                        * memTopo.tupleIncr() + memTopo.elementIncr(0);
+                int nIdx = addrOp.addr(values, 0);
+                
+//                int nIdx = gridTopo.addr(values)
+//                        * memTopo.tupleIncr() + memTopo.elementIncr(0);
 
                 data[nIdx] = (byte) 255;
             }

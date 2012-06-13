@@ -169,6 +169,7 @@ public class SWC2Image {
 
         final GridTopo gridTopo = cnt.gridTopo();
         final MemTopo memTopo = cnt.layer(0).v1;
+        final AddrOp addrOp = new AddrOp(gridTopo, memTopo);
         final ByteBuffer buffer = (ByteBuffer) cnt.layer(0).v2;
 
         if (!buffer.hasArray()) {
@@ -186,9 +187,11 @@ public class SWC2Image {
             pos[0] = values.get(i).x + offsetX;
             pos[1] = values.get(i).y + offsetY;
             pos[2] = values.get(i).z + offsetZ;
+            
+            final int idx = addrOp.addr(pos, 0);
 
-            int idx = gridTopo.addr(pos)
-                    * memTopo.tupleIncr() + memTopo.elementIncr(0);
+//            int idx = gridTopo.addr(pos)
+//                    * memTopo.tupleIncr() + memTopo.elementIncr(0);
 
             data[idx] = (byte) 255;
 
